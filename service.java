@@ -76,7 +76,7 @@ public class service {
         System.out.print("Il set di keyword e': " + kStringSet);
 
         //visualizzo a schermo il nodo che si occupa della keyword
-        targetNodeId = getStringSearched(connectedNode.generateBitSet(kStringSet), r);
+        targetNodeId = getStringSearched(connectedNode.generateTritSet(kStringSet));
         System.out.println("\nNodo che si occupa della keyword: " + targetNodeId);
         System.out.println("Cerco il nodo: " + targetNodeId);
 
@@ -118,7 +118,10 @@ public class service {
         Scanner scan = new Scanner(System.in);
         System.out.println("Inserisci il contenuto dell'oggetto");
         String valueObject  = scan.nextLine();
+        String targetNodeId = getStringSearched(connectedNode.generateTritSet(key));
+        System.out.println("\nNodo che si occupa della keyword: " + targetNodeId);
         connectedNode.addObject(hypercube, key, valueObject);
+        System.out.println("Oggetto inserito");
     }
 
     private static Set<String> insertKeywords(){
@@ -151,15 +154,8 @@ public class service {
         return kStringSet;
     }
 
-    private static String getStringSearched(BitSet bs, int r){
-        String searched="";
-        for (int i = 0; i < r; i++){
-            if(bs.get(i) == true){
-                searched = "1" + searched;
-            }
-            else searched = "0" + searched;
-        }
-        return searched; 
+    private static String getStringSearched(TritSet bs){
+        return bs.getValue(); 
     }
 
     public static String randomNode(int r){
@@ -183,13 +179,18 @@ public class service {
     }
 
     private static void printLog(Hypercube hypercube, Node connectedNode){
-         //stampe debug
-         System.out.println("Ipercubo creato");
-         System.out.println("I nodi creati sono: \n" + connectedNode.getNodeList());
+        //stampe debug
+        System.out.println("Ipercubo creato");
+        System.out.println("I nodi creati sono: \n" + connectedNode.getNodeList());
 
-        System.out.println("Connesso al nodo: " + connectedNode.getId() + "\nI suoi neighbors sono:"); 
-        for (Node node : connectedNode.getNeighbors()){
-            System.out.print("  " + node.getId());
-            }
-    }
+       System.out.println("Connesso al nodo: " + connectedNode.getId() + "\nI suoi neighbors sono:"); 
+       for (Node node : connectedNode.getNeighbors()){
+           System.out.print("  " + node.getId());
+           }
+       
+           System.out.println("\nI suoi neighbors che lo includono sono:"); 
+           for (Node node : connectedNode.getNeighborsIncluded()){
+               System.out.print("  " + node.getId());
+               }
+   }
 }

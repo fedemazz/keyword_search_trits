@@ -4,16 +4,16 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
+
 
 public class Node {
 
     private int r; //dimensione ipercubo
     private int n; //numero del nodo 
     private String id; //stringa id del nodo, composta dal suo codice binario
-    private BitSet bitset; //bitset del nodo, in particolare tiene traccia dei bit a 1
+    private TritSet tritset;
     private ArrayList<Node> neighbors; //in un implementazione reale sarebbero gli indirizzi?
     private Map<String, String> nodeList; //la lista degli id di tutti gli altri nodi 
     private Map<Set<String>, ArrayList<String>> references; //coppia chiave valore, dove il valore in un implementazione reale sarebbe l'indirizzo di una transazione/canale iota
@@ -25,55 +25,13 @@ public class Node {
     public Node (int n, int r){
         this.r = r;//r è la dimensione dell'ipercubo
         this.n = n; //numero del nodo che verrà trasformato in binario
-        this.id = createBinaryID(n); 
-        this.bitset = createBitset(this.id);
+        this.tritset = new TritSet(n,r);
+        this.id = this.tritset.getValue();
+        //this.bitset = createBitset(this.id);
         this.neighbors = new ArrayList<Node>();
         this.nodeList = createNodeList();
         this.references = new HashMap<Set<String>, ArrayList<String>>();
         this.objects = new HashMap<String, String>();
-    }
-
-    //identifico codice id del nodo
-    private String createBinaryID(int n){
-        //passo il numero del nodo per identificare il suo codice binario
-        String idString = Integer.toBinaryString(n);
-        //se il codice binario del nodo ottenuto non è della lunghezza r (dimensione dell'ipercubo) allora aggiungo gli zeri necessari
-        while (idString.length() < getR()){
-            idString = "0" + idString;
-        }
-        return idString;
-    }
-
-    //passo l' id del nodo e ottengo un bitset dove tengo traccia dei bit ad 1
-    private BitSet createBitset(String id){
-        return BitSet.valueOf(new long[] { Long.parseLong(id, 2) });
-    }
-
-    private Map<String, String> createNodeList(){
-        Map<String, String> list = new  HashMap<String, String>();
-        for (int i = 0; i <Math.pow(2, getR()); i++){
-            String currentID = createBinaryID(i);
-            list.put(currentID, "indirizzo: " + currentID);
-        }
-        return list;
-    }
-
-    //setto i vicini del nodo
-    public void setNeighbors(Map <String, Node> nodes) {
-        //scorro l'hashMap contenente tutti i nodi dell'ipercubo istanziati 
-       //e li confronto agli stessi, per trovare i "neighbors" dei vari nodi
-       //cioè quelli che differiscono di un bit rispetto al nodo trattato
-        for (Map.Entry<String, Node> entry : nodes.entrySet()) {
-            if (differOneBit(this.getN(), entry.getValue().getN())){
-            neighbors.add(entry.getValue());
-            }
-        }
-       }
-
-    //metodo per verificare se due numeri differiscono solo di un bit
-    static boolean differOneBit(int a, int b) { 
-        int x = a ^ b;
-        return x!= 0 && ((x & (x - 1)) == 0); 
     }
 
     public int getR(){
@@ -88,34 +46,55 @@ public class Node {
         return this.id;
     }
 
-    public BitSet getOne(){
-        return this.bitset;
+    public TritSet getTritSet(){
+        return this.tritset;
     }
+    
+    private Map<String, String> createNodeList(){
+        Map<String, String> list = new  HashMap<String, String>();
+        for (int i = 0; i <Math.pow(3, getR()); i++){
+            String currentID = new TritSet(i,getR()).getValue();
+            list.put(currentID, "indirizzo: " + currentID);
+        }
 
-    public BitSet getZero(String id){
-        return null;
-    }
+        return list;
+    } 
+
+    //setto i vicini del nodo
+    public void setNeighbors(Map <String, Node> nodes) {
+        //scorro l'hashMap contenente tutti i nodi dell'ipercubo istanziati 
+       //e li confronto agli stessi, per trovare i "neighbors" dei vari nodi
+       //cioè quelli che differiscono di un bit rispetto al nodo trattato
+        for (Map.Entry<String, Node> entry : nodes.entrySet()) {
+            if (this.tritset.differOneTrit(entry.toString())){
+            neighbors.add(entry.getValue());
+            }
+        }
+       }
 
     //restituisco i vicini del nodo
     public ArrayList<Node> getNeighbors(){
         return this.neighbors;
     }
 
+    public Set<String> getNodeList(){
+        return nodeList.keySet();
+    }
+
+
     //restituiscono i vicini del nodo i cui bitset includono il nodo stesso
     //tra tutti i vicini prendo solo quelli che soddisfano la condizione isIncluded
     public ArrayList<Node> getNeighborsIncluded(){
         ArrayList<Node> neighborsIncluded = new ArrayList<Node>();
         for (Node neighbor : this.getNeighbors()) {
-            if (isIncluded(this.getOne(), neighbor.getOne())) {
+            if (this.getTritSet().isIncludedIn(neighbor.getTritSet())) {
                 neighborsIncluded.add(neighbor);
             }
         }
         return neighborsIncluded;
     }
 
-    public Set<String> getNodeList(){
-        return nodeList.keySet();
-    }
+ 
 
     public ArrayList<String> getReference(Set<String> key) {
         if (this.references.containsKey(key)){
@@ -138,34 +117,44 @@ public class Node {
         return false;
     }
 
-    public boolean hasNeighbor(BitSet idBitSet){
-        for (Node neighbor : this.getNeighbors()) {
-            if (neighbor.getOne().equals(idBitSet)) {
-                return true;
-            }
-        }
-        return false;
-    }
 
-
-    public Node findTargetNode(BitSet bitSet){
-        //System.out.println("Cerco nodo...");
-        if (this.getOne().equals(bitSet)){
+    public Node findTargetNode(TritSet tritSet){
+        System.out.println("Cerco nodo...");
+        if (this.getTritSet().equals(tritSet)){
             return this;
         }
         else {
-            return this.nearestNode(bitSet).findTargetNode(bitSet);
+            return this.nearestNode(tritSet).findTargetNode(tritSet);
         }
     }
 
-    public BitSet generateBitSet(Set<String> keySet){
-        BitSet kSet = new BitSet();
+    public TritSet generateTritSet(Set<String> keySet){
+        
+        String kSetString = "";
+        for (int i = 0; i < getR(); i++){
+            kSetString = kSetString +"0";
+        }
+        StringBuilder temp = new StringBuilder(kSetString);
         for (String entry : keySet){
             int kBit = hashFunction(entry, r);
+            //int kBitValue = hashFunction3(entry);
             // setto il k-esimo bit del bitset di ricerca kSet ad 1
-            kSet.set(kBit); 
+            
+
+            //in base al valore dell'hashFunction3 (valore da 1 a 2) setto il bit di interesse 
+            /*if(kBitValue ==1){
+            temp.setCharAt(getR()-1  - kBit, '1'); }
+            else if (kBitValue == 2)            
+            temp.setCharAt(getR()-1  - kBit, '2');*/
+
+            //non uso hashFunction3 ma quante volte si ripetono keyword che danno lo stesso hash
+            if (temp.charAt(getR()-1  - kBit) == '0'){
+                temp.setCharAt(getR()-1  - kBit, '1');
+            } else {
+                temp.setCharAt(getR()-1  - kBit, '2');
+            }
         }
-        return kSet;
+        return new TritSet(temp.toString(),this.r);
     }
 
     
@@ -173,50 +162,27 @@ public class Node {
         return key.hashCode()%r;
     }
 
-    public Node nearestNode(BitSet targetSet){
-        BitSet tSet = new BitSet();
-        tSet.or(targetSet);
+    private static int hashFunction3(String key){
+        return key.hashCode()%2+1;
+    }
 
+    public Node nearestNode(TritSet targetSet){
         for(Node entry : this.getNeighbors()){
-            if (xor(targetSet, entry.getOne()).cardinality() < xor(targetSet, this.getOne()).cardinality()){
+            if (entry.getTritSet().xor(targetSet).cardinality() < this.getTritSet().xor(targetSet).cardinality()){
                 return entry;
             }
         }
         return null;
     }
 
-    private BitSet xor(BitSet bsTarget, BitSet bsNeigh){
-        BitSet bs1 = new BitSet();
-        BitSet bsXor = new BitSet();
-        bs1.or(bsTarget);
-        bsXor.or(bsNeigh);
-        bsXor.xor(bs1);
-        return bsXor;
-    }
+    
 
-
-
-    //controllo se il primo bitset è contenuto nel secondo
-    //01100 e 01101. il primo è contenuto nel secondo
-    public static boolean isIncluded(BitSet bitSet1, BitSet bitSet2){
-        BitSet includedBitSet = new BitSet();
-        BitSet bs1Temp = new BitSet();
-        BitSet bs2Temp = new BitSet();
-        includedBitSet.or(bitSet1); 
-        bs1Temp.or(bitSet1);
-        bs2Temp.or(bitSet2);
-        bs1Temp.and(bs2Temp);
-        if ( bs1Temp.equals(includedBitSet)) {
-            return true;
-        }
-        return false;
-    }
 
     //controllo se bitset2 può essere inserito come figlio di bitset 1 nell'SBT
     //il criterio è che il bit di differena tra bs1 e bs2 sia a destra dell'ultimo bit di bs1
     //01100 e 01110. bs2 è children
     //01100 e 11000. bs2 non è children
-    public boolean isChildren(BitSet bitSet1, BitSet bitSet2){
+    /*public boolean isChildren(BitSet bitSet1, BitSet bitSet2){
         BitSet childrenBitSet = new BitSet();
         BitSet bs1Temp = new BitSet();
         BitSet bs2Temp = new BitSet();
@@ -256,7 +222,7 @@ public class Node {
             }
         }
         return root;
-    }
+    } */
 
     public static String getMd5(String input) { 
         try { 
@@ -296,7 +262,7 @@ public class Node {
         //eseguire il controllo se la copia esiste
 
         //inserisco nel nodo che si occupa del set di keyword la coppia <Kσ, σ>
-        Insert(findTargetNode(generateBitSet(oKey)), oKey, idObject);
+        Insert(findTargetNode(generateTritSet(oKey)), oKey, idObject);
     }
 
     private void Insert(Hypercube hypercube, String idObject, String idNode){
@@ -322,16 +288,17 @@ public class Node {
     }
 
     public ArrayList<String> getObjects(Hypercube hypercube, Set<String> keySet, int c){
+        
         ArrayList<String> result = new ArrayList<String>();
         //hash table references <Kσ, σ>
         //do il set di keyword in input al nodo che lo gestisce (K)
         //ottengo una lista di id. {σ1....σn}
         //Ogni id si riferisce ad un oggetto differente. Tutti gli oggetti hanno in comune il set di keyword 
-        ArrayList<String> reference = new ArrayList<String>(this.findTargetNode(generateBitSet(keySet)).getReference(keySet));
+        ArrayList<String> reference = new ArrayList<String>(this.findTargetNode(generateTritSet(keySet)).getReference(keySet));
 
         //controllo sul conteggio dei risultati 
         //se inferiore ai risultati attesi esplorare SBT
-        NodeSBT sbtRoot = generateSBT(true);
+        //NodeSBT sbtRoot = generateSBT(true);
 
         //se ho risultati
         if (reference != null){
@@ -339,7 +306,7 @@ public class Node {
             for (String idObject : reference){
                 //cerco il nodo che mantiene l'oggetto σ (ci arrivo attraverso l'hash table <σ, u>)          
                 //e recupero da lui l'oggetto vero e proprio
-                result.add(this.findTargetNode(createBitset(hypercube.getMapping(idObject))).getObject(idObject));
+                result.add(this.findTargetNode(new TritSet(hypercube.getMapping(idObject), this.r)).getObject(idObject));
             }
         }
         return result;

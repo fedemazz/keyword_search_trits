@@ -10,7 +10,7 @@ public class Hypercube {
 
     public Hypercube(int r) {
         this.r = r;
-        double nNode = Math.pow(2,r);
+        double nNode = Math.pow(3,r);
 
         //devo creare tanti nodi quanto è grande nNode 
         for (int i = 0; i < nNode; i++){
