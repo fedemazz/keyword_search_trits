@@ -15,8 +15,8 @@ public class Node {
     private String id; //stringa id del nodo, composta dal suo codice binario
     private TritSet tritset;
     private ArrayList<Node> neighbors; //in un implementazione reale sarebbero gli indirizzi?
-    private Map<String, String> nodeList; //la lista degli id di tutti gli altri nodi 
-    private Map<Set<String>, ArrayList<String>> references; //coppia chiave valore, dove il valore in un implementazione reale sarebbe l'indirizzo di una transazione/canale iota
+    private Map<String, String> nodeList; //la lista degli id di tutti gli altri nodi (serve solo per log)
+    private Map<Set<String>, ArrayList<String>> references; 
     private Map<String, String> objects;
 
     public Node(){

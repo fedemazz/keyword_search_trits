@@ -156,6 +156,7 @@ public class TritSet {
         
         public static void main (String[]args) {
 
+            /* solo per test
             for (int i = 0; i < Math.pow(3,4); i++){
             TritSet trits1 = new TritSet(i, 4);
             System.out.println(trits1.getValue());
@@ -197,7 +198,7 @@ public class TritSet {
             System.out.println(new TritSet("1000",4).nextSetTrit(0));
             System.out.println(new TritSet("0100",4).nextSetTrit(0));
             System.out.println(new TritSet("2000",4).nextSetTrit(0));
-            System.out.println(new TritSet("0200",4).nextSetTrit(0));
+            System.out.println(new TritSet("0200",4).nextSetTrit(0));*/
 
         }
 }
